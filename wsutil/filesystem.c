@@ -932,6 +932,32 @@ configuration_init(const char* arg0)
 #ifdef _WIN32
     return configuration_init_w32(arg0);
 #else
+    /*
+     * Fedora mounts /tmp on tmpfs, which is backed by RAM, and capture
+     * files are routinely larger than RAM. Default the temporary
+     * directory to /var/tmp unless the user has asked for something else.
+     *
+     * TMPDIR is the one knob that GLib (g_get_tmp_dir()), Qt
+     * (QDir::tempPath()) and child processes such as dumpcap all read on
+     * this platform, so setting it here covers every temporary file the
+     * programs create without having to touch each call site. It has to
+     * happen before any of them run, and configuration_init() is among
+     * the first things every program calls.
+     *
+     * Only TMPDIR is consulted. TMP and TEMP are Windows spellings that
+     * neither GLib nor Qt looks at on Unix, so honouring them here would
+     * promise something the rest of the code cannot keep.
+     *
+     * An empty TMPDIR counts as unset, which is how both GLib and Qt
+     * treat it - otherwise it would suppress this default and leave them
+     * falling back to /tmp, the one outcome nobody asked for.
+     */
+    const char *tmpdir = g_getenv("TMPDIR");
+
+    if (tmpdir == NULL || tmpdir[0] == '\0') {
+        g_setenv("TMPDIR", "/var/tmp", true);
+    }
+
     return configuration_init_posix(arg0);
 #endif
 }
