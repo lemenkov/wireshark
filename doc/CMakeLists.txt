@@ -40,28 +40,70 @@ endmacro()
 
 ADD_MAN_PAGE(wireshark   1)
 ADD_MAN_PAGE(tshark      1)
-ADD_MAN_PAGE(stratoshark 1)
-ADD_MAN_PAGE(strato      1)
 
-ADD_MAN_PAGE(androiddump 1)
 ADD_MAN_PAGE(capinfos    1)
 ADD_MAN_PAGE(captype     1)
-ADD_MAN_PAGE(ciscodump   1)
 ADD_MAN_PAGE(dumpcap     1)
 ADD_MAN_PAGE(editcap     1)
-ADD_MAN_PAGE(etwdump     1)
-ADD_MAN_PAGE(falcodump   1)
 ADD_MAN_PAGE(mergecap    1)
 ADD_MAN_PAGE(randpkt     1)
-ADD_MAN_PAGE(randpktdump 1)
 ADD_MAN_PAGE(rawshark    1)
 ADD_MAN_PAGE(reordercap  1)
 ADD_MAN_PAGE(sharkd      1)
-ADD_MAN_PAGE(sshdig      1)
-ADD_MAN_PAGE(sshdump     1)
 ADD_MAN_PAGE(text2pcap   1)
-ADD_MAN_PAGE(udpdump     1)
-ADD_MAN_PAGE(wifidump    1)
+
+#
+# A program that is not built should not leave a manual page behind for
+# it. Each of these follows the option that decides whether the program
+# is built, the same way dpauxmon, sdjournal and mmdbresolve do below.
+#
+if(BUILD_stratoshark)
+	ADD_MAN_PAGE(stratoshark 1)
+endif()
+
+if(BUILD_strato)
+	ADD_MAN_PAGE(strato      1)
+endif()
+
+if(BUILD_androiddump)
+	ADD_MAN_PAGE(androiddump 1)
+endif()
+
+if(BUILD_ciscodump AND LIBSSH_FOUND)
+	ADD_MAN_PAGE(ciscodump   1)
+endif()
+
+if(BUILD_dumpcalls AND SINSP_FOUND)
+	ADD_MAN_PAGE(dumpcalls   1)
+endif()
+
+if(BUILD_etwdump AND WIN32)
+	ADD_MAN_PAGE(etwdump     1)
+endif()
+
+if(BUILD_falcodump AND SINSP_FOUND)
+	ADD_MAN_PAGE(falcodump   1)
+endif()
+
+if(BUILD_randpktdump)
+	ADD_MAN_PAGE(randpktdump 1)
+endif()
+
+if(BUILD_sshdig AND LIBSSH_FOUND)
+	ADD_MAN_PAGE(sshdig      1)
+endif()
+
+if(BUILD_sshdump AND LIBSSH_FOUND)
+	ADD_MAN_PAGE(sshdump     1)
+endif()
+
+if(BUILD_udpdump)
+	ADD_MAN_PAGE(udpdump     1)
+endif()
+
+if(BUILD_wifidump AND LIBSSH_FOUND)
+	ADD_MAN_PAGE(wifidump    1)
+endif()
 
 ADD_MAN_PAGE(extcap           4)
 ADD_MAN_PAGE(wireshark-filter 4)
@@ -112,13 +154,17 @@ endif()
 if(ASCIIDOCTOR_FOUND)
 	ASCIIDOCTOR2HTML("Wireshark_Release_Notes.adoc" CONVERT_UNDERSCORES)
 	ASCIIDOCTOR2TXT("Wireshark_Release_Notes.adoc" CONVERT_UNDERSCORES)
-	ASCIIDOCTOR2HTML("Stratoshark_Release_Notes.adoc" CONVERT_UNDERSCORES)
-	ASCIIDOCTOR2TXT("Stratoshark_Release_Notes.adoc" CONVERT_UNDERSCORES)
+	set(RELEASE_NOTES_HTML "${CMAKE_CURRENT_BINARY_DIR}/Wireshark Release Notes.html")
+
+	# Only the release notes for something that was built.
+	if(BUILD_stratoshark)
+		ASCIIDOCTOR2HTML("Stratoshark_Release_Notes.adoc" CONVERT_UNDERSCORES)
+		list(APPEND RELEASE_NOTES_HTML "${CMAKE_CURRENT_BINARY_DIR}/Stratoshark Release Notes.html")
+	endif()
 
 	add_custom_target(release_notes_html
 		DEPENDS
-			"${CMAKE_CURRENT_BINARY_DIR}/Wireshark Release Notes.html"
-			"${CMAKE_CURRENT_BINARY_DIR}/Stratoshark Release Notes.html"
+			${RELEASE_NOTES_HTML}
 	)
 	set_target_properties(release_notes_html PROPERTIES FOLDER "Documentation")
 
@@ -166,8 +212,7 @@ if(ASCIIDOCTOR_FOUND)
 	install(
 		FILES
 			${HTML_INSTALL_FILES}
-			"${CMAKE_CURRENT_BINARY_DIR}/Wireshark Release Notes.html"
-			"${CMAKE_CURRENT_BINARY_DIR}/Stratoshark Release Notes.html"
+			${RELEASE_NOTES_HTML}
 		DESTINATION
 			${CMAKE_INSTALL_DOCDIR}
 		COMPONENT "ReleaseNotes"
